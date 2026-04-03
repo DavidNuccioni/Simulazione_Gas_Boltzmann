@@ -101,7 +101,7 @@ def simulation():
         # ISTOGRAMMA
         # ======================
         speeds = np.linalg.norm(vel, axis=1)
-        bins = 30
+        bins = 50
         
         # ======================
         # CURVA DI MAXWELL (2D)
