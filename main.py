@@ -26,7 +26,7 @@ def step(pos, vel, L, radius, dt):
 
     pos += vel * dt
 
-    # pareti
+    # pPareti
     for i in range(N):
         for d in range(2):
             if pos[i,d] < radius:
@@ -36,7 +36,7 @@ def step(pos, vel, L, radius, dt):
                 pos[i,d] = L - radius
                 vel[i,d] *= -1
 
-    # collisioni
+    # Collisioni
     for i in range(N):
         for j in range(i+1, N):
             dx = pos[i,0] - pos[j,0]
@@ -94,7 +94,7 @@ def simulation():
             y = int(pos[i,1] * scale)
             pygame.draw.circle(screen, (0,255,255), (x,y), int(radius*scale))
 
-        # bordo area sim
+        # Bordo area sim
         pygame.draw.rect(screen, (255,255,255), (0,0,SIM_WIDTH,HEIGHT), 2)
 
         # ======================
@@ -117,8 +117,6 @@ def simulation():
 
         #vmax_plot = 3 * np.sqrt(np.mean(speeds**2))  # scala adattiva
         hist, edges = np.histogram(speeds, bins=bins, range=(0, vmax_plot), density=True)
-
-        
         
         scale_y = HEIGHT - 50
         scale_x = HIST_WIDTH / v_max
@@ -133,8 +131,7 @@ def simulation():
 
             pygame.draw.rect(screen, (100,200,100), (x0, y0, width-2, height))
 
-        # disegna curva di Maxwell
-        # normalizzazione per adattarla all'altezza del grafico
+        # Disegna curva di Maxwell
         points = []
 
         for i in range(len(v_vals)):
@@ -146,7 +143,7 @@ def simulation():
         if len(points) > 1:
             pygame.draw.lines(screen, (255, 50, 50), False, points, 2)
 
-        # titolo
+        # Titolo
         text = font.render("Distribuzione velocità", True, (255,255,255))
         screen.blit(text, (SIM_WIDTH + 50, 10))
 
