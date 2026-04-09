@@ -1,5 +1,7 @@
+import os 
 import numpy as np
 import matplotlib.pyplot as plt
+os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "1"
 import pygame
 import argparse
 from scipy.optimize import curve_fit
@@ -183,7 +185,7 @@ def simulation():
     pygame.quit()
     
     # Creare funzione che analizza e stampa le statistiche finali della simulazione, confrontandole con i valori teorici attesi e fa il fit. L'unico dato che serve è la varibile vel da passare 
-
+    
 
     # Statistiche teoriche (dalle condizioni iniziali)
     # Se tutte le particelle sono inizializzate con modulo v0, allora <v^2> = v0^2
