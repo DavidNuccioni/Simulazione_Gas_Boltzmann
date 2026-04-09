@@ -22,6 +22,10 @@ def parser_arguments():
     return parser.parse_args()
 
 
+def maxwell_2d(v, T):
+    return (v / T) * np.exp(-v**2 / (2*T))
+
+
 @njit
 def step(pos, vel, L, radius, dt):
     N = pos.shape[0]
@@ -123,7 +127,7 @@ def simulation():
         vmax_plot = v_max
 
         v_vals = np.linspace(0, v_max, 300)
-        f_vals = (v_vals / T) * np.exp(-v_vals**2 / (2*T))
+        f_vals = maxwell_2d(v_vals, T)
 
         hist, edges = np.histogram(speeds, bins=bins, range=(0, vmax_plot), density=True)
         
@@ -176,60 +180,92 @@ def simulation():
         mean_text = font.render(f"Vel. media: {mean_speed:.3f}", True, (255,255,255))
         screen.blit(mean_text, (SIM_WIDTH + 50, 40))
 
-        # Titolo
+        # Titolo e tempo
         text = font.render("Distribuzione velocità", True, (255,255,255))
         screen.blit(text, (SIM_WIDTH + 50, 10))
 
+        time_text = font.render(f"t = {t:.1f} s", True, (255,255,255))
+        text_rect = time_text.get_rect()
+        text_rect.topright = (SIM_WIDTH - 10, 10)
+        screen.blit(time_text, text_rect)
+        
         pygame.display.flip()
-
+    
     pygame.quit()
-    
-    # Creare funzione che analizza e stampa le statistiche finali della simulazione, confrontandole con i valori teorici attesi e fa il fit. L'unico dato che serve è la varibile vel da passare 
-    
+    analyze_statistics(vel, t)
+    plt.show()
 
-    # Statistiche teoriche (dalle condizioni iniziali)
-    # Se tutte le particelle sono inizializzate con modulo v0, allora <v^2> = v0^2
+    
+def analyze_statistics(vel, t):
+    
+    # Statistiche teoriche (dalle condizioni iniziali <v^2> = v0^2)
     T_theoretical = 0.5 * (v0**2)
     v_mp_theoretical = np.sqrt(T_theoretical)
     v_mean_theoretical = np.sqrt(np.pi * T_theoretical / 2)
     energy_per_particle_theoretical = 0.5 * v0**2
     total_energy_theoretical = energy_per_particle_theoretical * N
 
-
-    # Statistiche finali: velocità e energia
+    # Statistiche finali
     final_speeds = np.linalg.norm(vel, axis=1)
-    mean_speed_final = np.mean(final_speeds)
-    # Energia media per particella (m=1): 1/2 <v^2>
     energy_per_particle = 0.5 * np.mean(final_speeds**2)
     total_energy = energy_per_particle * N
-    # Temperatura definita come T = 1/2 <v^2> (coerente con il codice)
     T_final = energy_per_particle
-    # Velocità più probabile dalla distribuzione di Maxwell 2D: v_mp = sqrt(T)
-    hist, edges = np.histogram(final_speeds, bins=50, density=True)
-    centers = 0.5 * (edges[:-1] + edges[1:])
-    v_most_probable_sim = centers[np.argmax(hist)]
 
+    # Fit maxwelliana
+    bins = 50
+    hist, edges = np.histogram(final_speeds, bins=bins, density=True)
+    centers = 0.5 * (edges[:-1] + edges[1:])
+    v_vals = np.linspace(0, max(final_speeds)*1.2, 300)
+    f_theoretical = maxwell_2d(v_vals, T_theoretical)
+    mask = hist > 0.01  # evita rumore
+    
+    popt, pcov = curve_fit(maxwell_2d, centers[mask], hist[mask], p0=[T_final])
+    T_fit = popt[0] 
+    T_fit_err = np.sqrt(pcov[0,0])
+    v_mp_fit = np.sqrt(T_fit)
+    v_mp_err = 0.5 / np.sqrt(T_fit) * T_fit_err
+    v_mean_fit = np.sqrt(np.pi * T_fit / 2)
+    f_fit = maxwell_2d(v_vals, T_fit)
+   
+    # Grafico finale del fit
+    plt.figure() 
+    plt.hist(final_speeds, bins=bins, density=True, alpha=0.5, label="Simulazione")
+    plt.plot(v_vals, f_theoretical, 'r--', label=f"Teoria (T={T_theoretical:.3f})")
+    plt.plot(v_vals, f_fit, 'k-', label=f"Fit (T={T_fit:.3f})")
+    plt.xlabel("Velocità")
+    plt.ylabel("PDF")
+    plt.title("Distribuzione delle velocità")
+    plt.legend()
+    plt.grid()
+    plt.show(block=False)
+    
+    #⚠️Confrotare valori teorici, della simulazione e del fit⚠️
+    # Stampa risultati
     print(f"\n---------------------------------------------\n")
     print(f"--- Simulazione terminata ---\n")
     print(f"Tempo totale simulazione: {t:.1f} s")
     print(f"Numero di particelle: {N}")
     print(f"Velocità iniziale: {v0:.3f}")
     print(f"\n---------------------------------------------\n")
-    print("--- Valori teorici attesi ---")
+    print("--- Valori teorici attesi ---\n")
     print(f"Velocità media: {v_mean_theoretical:.3f}")
     print(f"Velocità più probabile: {v_mp_theoretical:.3f}")
     print(f"Energia media per particella: {energy_per_particle_theoretical:.3f}")
     print(f"Energia totale: {total_energy_theoretical:.3f}")
     print(f"Temperatura: {T_theoretical:.3f}")
     print(f"\n---------------------------------------------\n")
-    print(f"--- Statistiche simulazione ---")
-    print(f"Velocità media: {mean_speed_final:.3f}")
-    print(f"Velocità più probabile: {v_most_probable_sim:.3f}")
+    print(f"--- Statistiche simulazione ---\n")
+    print(f"Velocità media: {v_mean_fit:.3f}")
+    print(f"Velocità più probabile: {v_mp_fit:.3f} ± {v_mp_err:.3f}")
     print(f"Energia media per particella: {energy_per_particle:.3f}")
     print(f"Energia totale: {total_energy:.3f}")
-    print(f"Temperatura: {T_final:.3f}\n")
-
+    print(f"Temperatura: {T_fit:.3f} ± {T_fit_err:.3f}\n")
+    print(f"\n---------------------------------------------\n")
+    print(f"--- ERRORI RELATIVI ---\n")
+    print(f"Errore energia: {(np.abs(energy_per_particle - energy_per_particle_theoretical)/energy_per_particle_theoretical):.2%}")
+    print(f"Errore T_fit:   {(np.abs(T_fit - T_theoretical)/T_theoretical):.2%}")
     
+    return
 
 
 if __name__ == "__main__":
