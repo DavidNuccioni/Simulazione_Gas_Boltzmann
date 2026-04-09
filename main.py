@@ -1,6 +1,8 @@
 import numpy as np
+import matplotlib.pyplot as plt
 import pygame
 import argparse
+from scipy.optimize import curve_fit
 from numba import njit
 
 def parser_arguments():
@@ -18,8 +20,6 @@ def parser_arguments():
     return parser.parse_args()
 
 
-# NUMBA STEP
-#-----------------------
 @njit
 def step(pos, vel, L, radius, dt):
     N = pos.shape[0]
@@ -180,12 +180,17 @@ def simulation():
 
         pygame.display.flip()
 
+    pygame.quit()
+    
+    # Creare funzione che analizza e stampa le statistiche finali della simulazione, confrontandole con i valori teorici attesi e fa il fit. L'unico dato che serve è la varibile vel da passare 
+
+
     # Statistiche teoriche (dalle condizioni iniziali)
     # Se tutte le particelle sono inizializzate con modulo v0, allora <v^2> = v0^2
     T_theoretical = 0.5 * (v0**2)
     v_mp_theoretical = np.sqrt(T_theoretical)
     v_mean_theoretical = np.sqrt(np.pi * T_theoretical / 2)
-    energy_per_particle_theoretical = T_theoretical
+    energy_per_particle_theoretical = 0.5 * v0**2
     total_energy_theoretical = energy_per_particle_theoretical * N
 
 
@@ -198,7 +203,9 @@ def simulation():
     # Temperatura definita come T = 1/2 <v^2> (coerente con il codice)
     T_final = energy_per_particle
     # Velocità più probabile dalla distribuzione di Maxwell 2D: v_mp = sqrt(T)
-    v_most_probable = np.sqrt(T_final)
+    hist, edges = np.histogram(final_speeds, bins=50, density=True)
+    centers = 0.5 * (edges[:-1] + edges[1:])
+    v_most_probable_sim = centers[np.argmax(hist)]
 
     print(f"\n---------------------------------------------\n")
     print(f"--- Simulazione terminata ---\n")
@@ -207,20 +214,19 @@ def simulation():
     print(f"Velocità iniziale: {v0:.3f}")
     print(f"\n---------------------------------------------\n")
     print("--- Valori teorici attesi ---")
-    print(f"Velocità media teorica (<v>): {v_mean_theoretical:.3f}")
-    print(f"Velocità più probabile teorica (v_mp): {v_mp_theoretical:.3f}")
-    print(f"Energia media teorica per particella: {energy_per_particle_theoretical:.3f}")
-    print(f"Energia totale teorica: {total_energy_theoretical:.3f}")
-    print(f"Temperatura teorica (T): {T_theoretical:.3f}")
+    print(f"Velocità media: {v_mean_theoretical:.3f}")
+    print(f"Velocità più probabile: {v_mp_theoretical:.3f}")
+    print(f"Energia media per particella: {energy_per_particle_theoretical:.3f}")
+    print(f"Energia totale: {total_energy_theoretical:.3f}")
+    print(f"Temperatura: {T_theoretical:.3f}")
     print(f"\n---------------------------------------------\n")
-    print(f"--- Statistiche finali ---")
-    print(f"Velocità media (finale): {mean_speed_final:.3f}")
-    print(f"Velocità più probabile (Maxwell): {v_most_probable:.3f}")
+    print(f"--- Statistiche simulazione ---")
+    print(f"Velocità media: {mean_speed_final:.3f}")
+    print(f"Velocità più probabile: {v_most_probable_sim:.3f}")
     print(f"Energia media per particella: {energy_per_particle:.3f}")
     print(f"Energia totale: {total_energy:.3f}")
-    print(f"Temperatura (T): {T_final:.3f}\n")
+    print(f"Temperatura: {T_final:.3f}\n")
 
-    pygame.quit()
     
 
 
