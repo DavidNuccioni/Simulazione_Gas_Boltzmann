@@ -77,6 +77,7 @@ def simulation():
     font = pygame.font.SysFont(None, 24)
 
     running = True
+    user_exit = False
     t = 0.0
 
     # LOOP
@@ -85,7 +86,13 @@ def simulation():
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                user_exit = True
                 running = False
+            
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    user_exit = True
+                    running = False
 
         # calcola dt dal clock di pygame (ms -> s)
         frame_ms = clock.tick(60)
@@ -180,7 +187,7 @@ def simulation():
         mean_text = font.render(f"Vel. media: {mean_speed:.3f}", True, (255,255,255))
         screen.blit(mean_text, (SIM_WIDTH + 50, 40))
 
-        # Titolo e tempo
+        # Titolo, tempo e comandi
         text = font.render("Distribuzione velocità", True, (255,255,255))
         screen.blit(text, (SIM_WIDTH + 50, 10))
 
@@ -189,9 +196,14 @@ def simulation():
         text_rect.topright = (SIM_WIDTH - 10, 10)
         screen.blit(time_text, text_rect)
         
+        controls_text = font.render("ESC: esci", True, (200,200,200))
+        screen.blit(controls_text, (10, HEIGHT - 30))
+
         pygame.display.flip()
     
     pygame.quit()
+    if user_exit:
+       print(f"\nSimulazione interrotta dall'utente")
     analyze_statistics(vel, t)
     plt.show()
 
