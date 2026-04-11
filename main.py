@@ -275,7 +275,6 @@ def analyze_statistics(vel, t):
     print(f"Errore energia: {(np.abs(energy_per_particle - energy_per_particle_theoretical)/energy_per_particle_theoretical):.2%}")
     print(f"Errore T (simulazione): {(np.abs(T_final - T_theoretical)/T_theoretical):.2%}")
     print(f"Errore T (fit):   {(np.abs(T_fit - T_theoretical)/T_theoretical):.2%}")
-    print(f"\nCompatibilità Temperatura con teoria: {abs(T_fit - T_theoretical) < 2*T_fit_err}")
     print(f"\n---------------------------------------------\n")
 
     return
