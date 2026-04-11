@@ -205,11 +205,18 @@ def analyze_statistics(vel, t):
     energy_per_particle_theoretical = 0.5 * v0**2
     total_energy_theoretical = energy_per_particle_theoretical * N
 
-    # Statistiche finali
+    # Statistiche finali simulazione
     final_speeds = np.linalg.norm(vel, axis=1)
     energy_per_particle = 0.5 * np.mean(final_speeds**2)
+    std_v2 = np.std(final_speeds**2)
     total_energy = energy_per_particle * N
     T_final = energy_per_particle
+    T_err = 0.5 * std_v2 / np.sqrt(N)
+    energy_err = T_err
+    total_energy_err = N * energy_err
+    mean_speed_sim = np.mean(final_speeds)
+    std_speed = np.std(final_speeds)
+    mean_speed_err = std_speed / np.sqrt(N)
 
     # Fit maxwelliana
     bins = 50
@@ -225,6 +232,7 @@ def analyze_statistics(vel, t):
     v_mp_fit = np.sqrt(T_fit)
     v_mp_err = 0.5 / np.sqrt(T_fit) * T_fit_err
     v_mean_fit = np.sqrt(np.pi * T_fit / 2)
+    v_mean_fit_err = (np.sqrt(np.pi / 8) / np.sqrt(T_fit)) * T_fit_err
     f_fit = maxwell_2d(v_vals, T_fit)
    
     # Grafico finale del fit
@@ -239,7 +247,6 @@ def analyze_statistics(vel, t):
     plt.grid()
     plt.show(block=False)
     
-    #⚠️Confrotare valori teorici, della simulazione e del fit⚠️
     # Stampa risultati
     print(f"\n---------------------------------------------\n")
     print(f"--- Simulazione terminata ---\n")
@@ -255,16 +262,22 @@ def analyze_statistics(vel, t):
     print(f"Temperatura: {T_theoretical:.3f}")
     print(f"\n---------------------------------------------\n")
     print(f"--- Statistiche simulazione ---\n")
-    print(f"Velocità media: {v_mean_fit:.3f}")
-    print(f"Velocità più probabile: {v_mp_fit:.3f} ± {v_mp_err:.3f}")
-    print(f"Energia media per particella: {energy_per_particle:.3f}")
-    print(f"Energia totale: {total_energy:.3f}")
-    print(f"Temperatura: {T_fit:.3f} ± {T_fit_err:.3f}\n")
+    print(f"Velocità media: {mean_speed_sim:.3f} ± {mean_speed_err:.3f}")
+    print(f"Energia media per particella: {energy_per_particle:.3f} ± {energy_err:.3f}")
+    print(f"Energia totale: {total_energy:.3f} ± {total_energy_err:.3f}")
+    print(f"Temperatura: {T_final:.3f} ± {T_err:.3f}\n")
     print(f"\n---------------------------------------------\n")
+    print(f"--- Statistiche fit ---\n")
+    print(f"Velocità media: {v_mean_fit:.3f} ± {v_mean_fit_err:.3f}")
+    print(f"Velocità più probabile: {v_mp_fit:.3f} ± {v_mp_err:.3f}")
+    print(f"Temperatura: {T_fit:.3f} ± {T_fit_err:.3f}\n")
     print(f"--- ERRORI RELATIVI ---\n")
     print(f"Errore energia: {(np.abs(energy_per_particle - energy_per_particle_theoretical)/energy_per_particle_theoretical):.2%}")
-    print(f"Errore T_fit:   {(np.abs(T_fit - T_theoretical)/T_theoretical):.2%}")
-    
+    print(f"Errore T (simulazione): {(np.abs(T_final - T_theoretical)/T_theoretical):.2%}")
+    print(f"Errore T (fit):   {(np.abs(T_fit - T_theoretical)/T_theoretical):.2%}")
+    print(f"\nCompatibilità Temperatura con teoria: {abs(T_fit - T_theoretical) < 2*T_fit_err}")
+    print(f"\n---------------------------------------------\n")
+
     return
 
 
